@@ -85,10 +85,13 @@ namespace maestro {
   class APIV2 : public MAESTROClass {
 
     public:
+    // 两个构造函数，根据传入的参数决定调用哪个函数
       APIV2 (std::shared_ptr<ConfigurationV2> config) :
         MAESTROClass("APIV2"),
         configuration_(config),
         num_macs_(0) {
+          // std::unique_ptr是独占所有权的，即同一时间只能有一个std::unique_ptr实例拥有某个对象。如果需要转移所有权，可以使用std::move。
+          // std::map是一个关联容器，用于存储键值对。键值对是唯一的，即每个键在std::map中只能出现一次。
         tensor_info_mapping_table_ = std::make_unique<std::map<LayerType, int>>();
 
         ParseDFSL();
@@ -113,6 +116,10 @@ namespace maestro {
         return configuration_->network_->GetName();
       }
 
+      // 这个返回值可以这样理解：
+      // 最外层的 std::vector 可能表示不同的分析任务或不同的网络层。
+      // 每个任务或层的分析结果是一个 std::vector<std::shared_ptr<CA::CostAnalyisResults>>，表示该任务或层的多个分析结果。
+      // 每个分析结果是一个 CA::CostAnalyisResults 对象的智能指针。
        std::shared_ptr<std::vector<std::shared_ptr<std::vector<std::shared_ptr<CA::CostAnalyisResults>>>>>
         AnalyzeNeuralNetwork(
             bool print_results_to_screen = false,
@@ -122,12 +129,16 @@ namespace maestro {
           auto ret = std::make_shared<std::vector<std::shared_ptr<std::vector<std::shared_ptr<CA::CostAnalyisResults>>>>>();
 
         int layer_id = 0;
+        // 遍历神经网络的每一层
         for(auto layer : *(configuration_->network_)) {
+          // 调用分析函数
           auto layer_results = AnalyzeCostAllClusters(layer_id, print_results_to_screen, print_log_to_file);
-
+          // 调用当前对象的 GetNumPartialSums 方法，获取当前层的MAC（乘累加）操作数量。
+          // this代指当前类,与python中的self很相似
           long num_macs = this->GetNumPartialSums(layer_id);
+          // 获取 layer_results 中最后一个元素，即顶级聚类的分析结果。
           layer_results->at(layer_results->size()-1)->UpdateTopNumComputations(num_macs);
-
+          // 将当前层的分析结果 layer_results 添加到 ret 中。
           ret->push_back(layer_results); // Take the top level cluster results
           layer_id++;
         }
@@ -772,6 +783,7 @@ namespace maestro {
         message_printer_->PrintMsg(1, "Cluster construction and analysis is done");
       }
 
+      // 分析特定层的成本
       std::shared_ptr<std::vector<std::shared_ptr<CA::CostAnalyisResults>>> AnalyzeCostAllClusters(int layer_id, bool print_results = false, bool write_log_file = false) {
         auto target_cluster_analysis = configuration_->cluster_analysis_->at(layer_id);
         auto clusters = target_cluster_analysis->GetClusters();
@@ -784,6 +796,8 @@ namespace maestro {
                                (configuration_, configuration_->tensors_->at(tensor_info_idx), clusters);
 
         auto results = perf_analysis->AnalyzeEntireCluster(write_log_file);
+        return results;
+      }
 /*
         if(verbose) {
           for(int cluster_lv = 0; cluster_lv < target_cluster_analysis->GetClusters()->size(); cluster_lv++) {
@@ -799,11 +813,11 @@ namespace maestro {
           }
         }
 */
-        if(print_results) {
+        // if(print_results) {
           //felix
 //            auto top_cluster_res = results->at(results->size()-1);
 //          PrintAnalysisResultsSingleCluster(top_cluster_res);
-        }
+        // }
 /*
         if(show_all_cluster_results && print_results) {
           int cluster_lv = 0;
@@ -817,8 +831,8 @@ namespace maestro {
           PrintAnalysisResultsSingleCluster(top_cluster_res);
         }
 */
-        return results;
-      }
+      //   return results;
+      // }
 
       std::string ConstructOutputFileName() {
         std::string output_file_name = configuration_->dfsl_file_name_;

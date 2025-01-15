@@ -76,7 +76,9 @@ namespace maestro {
   class ConfigurationV2 {
 
     public:
+    // 构造函数
       ConfigurationV2(
+        // 构造函数输入参数
           std::string dfsl_file_name,
           std::string hw_file_name,
           std::shared_ptr<std::vector<int>> noc_bw,
@@ -88,6 +90,7 @@ namespace maestro {
           int l1_sram_byte_size,
           int l2_sram_byte_size,
           int offchip_bw) :
+          // 初始化列表
         dfsl_file_name_(dfsl_file_name),
         hw_file_name_(hw_file_name),
         noc_multcast_(noc_multcast),
@@ -98,6 +101,7 @@ namespace maestro {
         simd_width_(simd_width),
         l1_size_(l1_sram_byte_size),
         l2_size_(l2_sram_byte_size) {
+          // 构造函数体：
         network_= std::make_shared<DFA::NeuralNetwork>();
         tensors_ = std::make_shared<std::vector<std::shared_ptr<DFA::TensorTable>>>();
         nocs_ = std::make_shared<std::vector<std::shared_ptr<AHW::NetworkOnChipModel>>>();
@@ -107,6 +111,7 @@ namespace maestro {
                                 (num_pes, simd_width, top_noc_bw, l1_sram_byte_size, l2_sram_byte_size);
       }
 
+      // 成员变量
       std::string dfsl_file_name_;
       std::string hw_file_name_;
 
